@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEK LOSO TOUR 2026 - July & August Flow Map</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        rock: {
+                            900: '#0f1016',
+                            800: '#181a24',
+                            700: '#232636',
+                            gold: '#fbbf24',
+                            red: '#ef4444',
+                            neon: '#06b6d4'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Kanit', 'Prompt', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts (Kanit) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,300;0,400;0,600;0,700;1,800&display=swap" rel="stylesheet">
+
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: #0f1016;
+            color: #f3f4f6;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+            z-index: 10;
+            background-color: #0b0c10;
+        }
+
+        /* Custom Leaflet Marker Glows */
+        .custom-div-icon {
+            background: transparent;
+            border: none;
+        }
+
+        .marker-pin {
+            width: 32px;
+            height: 32px;
+            border-radius: 50% 50% 50% 0;
+            position: absolute;
+            transform: rotate(-45deg);
+            left: 50%;
+            top: 50%;
+            margin: -20px 0 0 -16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.6);
+            transition: all 0.3s ease;
+        }
+
+        .marker-pin-inner {
+            transform: rotate(45deg);
+            color: #000;
+            font-weight: 800;
+            font-size: 11px;
+        }
+
+        .marker-active .marker-pin {
+            background: #ef4444 !important;
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.9), 0 0 50px rgba(239, 68, 68, 0.5);
+            scale: 1.25;
+            z-index: 999;
+        }
+
+        /* Animated Pulsing Ring for Active Location */
+        .pulse-ring {
+            border: 3px solid #ef4444;
+            border-radius: 50%;
+            height: 50px;
+            width: 50px;
+            position: absolute;
+            left: -9px;
+            top: -29px;
+            animation: pulsate 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @keyframes pulsate {
+            0% { transform: scale(0.1, 0.1); opacity: 0.0; }
+            50% { opacity: 1.0; }
+            100% { transform: scale(1.6, 1.6); opacity: 0.0; }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #181a24;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #f59e0b;
+        }
+
+        .glass-panel {
+            background: rgba(24, 26, 36, 0.88);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col">
+
+    <!-- Top Header Navigation -->
+    <header class="h-16 bg-rock-800/90 border-b border-gray-800 px-4 md:px-6 flex items-center justify-between z-30 shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 to-red-600 flex items-center justify-center shadow-lg shadow-amber-500/30">
+                <i class="fa-solid font-bold fa-guitar text-black text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-extrabold tracking-wider bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 bg-clip-text text-transparent uppercase">
+                    SEK LOSO <span class="text-xs md:text-sm font-semibold text-gray-400 tracking-normal ml-1">TOUR MAP 2026</span>
+                </h1>
+                <p class="text-xs text-gray-400 hidden sm:block">แผนที่และผังการทัวร์คอนเสิร์ต (กรกฎาคม - สิงหาคม 2026) อัพเดทข้อมูล ณ วันที่ 2 สิงหาคม 2569</p>
+            </div>
+        </div>
+
+        <!-- Month Switcher & Quick Stats -->
+        <div class="flex items-center space-x-2 md:space-x-3">
+            <!-- Month Selector Buttons -->
+            <div class="bg-rock-900/80 p-1 rounded-xl border border-gray-700/60 flex items-center space-x-1 text-xs">
+                <button id="monthJulBtn" class="month-tab px-2.5 py-1 rounded-lg text-gray-300 hover:text-white transition font-semibold" data-month="7">ก.ค. 2026</button>
+                <button id="monthAugBtn" class="month-tab px-2.5 py-1 rounded-lg text-gray-300 hover:text-white transition font-semibold" data-month="8">ส.ค. 2026</button>
+                <button id="monthAllBtn" class="month-tab active px-2.5 py-1 rounded-lg bg-amber-500 text-black font-bold shadow transition" data-month="all">รวมทั้งหมด</button>
+            </div>
+
+            <div class="hidden lg:flex items-center space-x-2 bg-rock-700/60 px-3 py-1.5 rounded-lg border border-gray-700/50">
+                <i class="fa-solid fa-bolt text-red-500"></i>
+                <span class="text-xs text-gray-300">โชว์ทั้งหมด: <strong class="text-amber-400 font-bold" id="totalShowsCount">79</strong> โชว์</span>
+            </div>
+
+            <button id="toggleStatsBtn" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-xs px-3 py-1.5 rounded-lg border border-amber-500/30 transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span class="hidden sm:inline">สถิติทัวร์</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Stats Modal Popup -->
+    <div id="statsModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-rock-800 border border-gray-700 rounded-2xl w-full max-w-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button id="closeStatsBtn" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h2 class="text-xl font-bold text-amber-400 flex items-center space-x-2 mb-4">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>สรุปสถิติทัวร์คอนเสิร์ต SEK LOSO (ก.ค. - ส.ค. 2026)</span>
+            </h2>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div class="bg-rock-700/50 p-3 rounded-xl border border-gray-700 text-center">
+                    <p class="text-xs text-gray-400">โชว์ทั้งหมด (2 เดือน)</p>
+                    <p class="text-2xl font-bold text-amber-400 mt-1">79 <span class="text-xs text-gray-300">งาน</span></p>
+                </div>
+                <div class="bg-rock-700/50 p-3 rounded-xl border border-gray-700 text-center">
+                    <p class="text-xs text-gray-400">โชว์เดือน กรกฎาคม</p>
+                    <p class="text-2xl font-bold text-cyan-400 mt-1">41 <span class="text-xs text-gray-300">งาน</span></p>
+                </div>
+                <div class="bg-rock-700/50 p-3 rounded-xl border border-gray-700 text-center">
+                    <p class="text-xs text-gray-400">โชว์เดือน สิงหาคม</p>
+                    <p class="text-2xl font-bold text-orange-400 mt-1">38 <span class="text-xs text-gray-300">งาน</span></p>
+                </div>
+                <div class="bg-rock-700/50 p-3 rounded-xl border border-gray-700 text-center">
+                    <p class="text-xs text-gray-400">วันที่มี 2 งานขึ้นไป</p>
+                    <p class="text-2xl font-bold text-red-400 mt-1">16 <span class="text-xs text-gray-300">วัน</span></p>
+                </div>
+            </div>
+            
+            <div class="space-y-3 text-sm text-gray-300">
+                <div class="bg-rock-900/60 p-3.5 rounded-lg border border-gray-800">
+                    <p class="text-xs text-amber-400 font-semibold mb-2"><i class="fa-solid fa-star mr-1"></i> โชว์พิเศษและอีเวนต์สำคัญ (July Highlights):</p>
+                    <ul class="list-disc list-inside text-xs text-gray-300 space-y-1">
+                        <li><strong>21 ก.ค. (3 งาน):</strong> แถลงข่าว 30 ปี LOSO นานเท่าไรก็รอ (Lido สยาม) + งานแข่งเรือยาว วัดชินวราราม ปทุมธานี + ร้าน Tic Tac Toe Emsphere</li>
+                        <li><strong>27 ก.ค. (3 งาน):</strong> มวยคาดเชือก Kickboxing KATPRO (สนามมวยลุมพินี) + งาน JIB 25 ปี (อิมแพ็ค เมืองทองธานี) + โฮม เอกมัย</li>
+                        <li><strong>7 ก.ค.:</strong> Shooting คิวถ่ายทำ + ร้าน Virgin หนองแค สระบุรี</li>
+                    </ul>
+                </div>
+                <div class="bg-rock-900/60 p-3.5 rounded-lg border border-gray-800">
+                    <p class="text-xs text-cyan-400 font-semibold mb-1"><i class="fa-solid fa-plane-departure mr-1"></i> โชว์ข้ามภาคทางไกลทั่วประเทศไทย:</p>
+                    <p class="text-xs text-gray-400">ครอบคลุมทั้ง ภาคเหนือ (เชียงใหม่, เชียงราย, พิษณุโลก, นครสวรรค์, ลำปาง, กำแพงเพชร), ภาคใต้ (สงขลา, สุราษฎร์ธานี, ชุมพร, กระบี่, นครศรีธรรมราช), ภาคอีสาน (อุบลราชธานี, ศรีสะเกษ, สุรินทร์, บุรีรัมย์, อุดรธานี, ขอนแก่น, โคราช) และภาคตะวันออก/กลาง</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="flex-1 flex flex-col md:flex-row relative overflow-hidden">
+
+        <!-- Left / Top Map Panel -->
+        <div class="relative flex-1 h-full w-full">
+            
+            <!-- The Leaflet Map -->
+            <div id="map"></div>
+
+            <!-- Floating Timeline Player Controls Bar -->
+            <div class="absolute bottom-4 left-4 right-4 md:left-6 md:right-6 z-20">
+                <div class="glass-panel p-3 md:p-4 rounded-2xl shadow-2xl border border-gray-700/60 max-w-4xl mx-auto">
+                    
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mb-2">
+                        <!-- Playback Status Info -->
+                        <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
+                            <span id="currentDateDisplay" class="bg-amber-500 text-black px-3 py-1 rounded-lg font-black text-sm md:text-base tracking-wider shadow-md whitespace-nowrap">
+                                1 ก.ค. 2026
+                            </span>
+                            <div class="text-xs text-gray-300 truncate max-w-[200px] sm:max-w-xs">
+                                <span class="text-gray-400">สถานที่: </span>
+                                <span id="currentVenueDisplay" class="font-semibold text-white">ร้านเรื่องมันยาว เพชรเกษม...</span>
+                            </div>
+                        </div>
+
+                        <!-- Player Controls -->
+                        <div class="flex items-center space-x-2">
+                            <button id="prevBtn" title="วันก่อนหน้า" class="w-9 h-9 rounded-full bg-rock-700 hover:bg-rock-600 text-white flex items-center justify-center transition border border-gray-600">
+                                <i class="fa-solid fa-backward-step"></i>
+                            </button>
+                            <button id="playPauseBtn" title="เล่น/หยุดชั่วคราว" class="w-11 h-11 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-black font-bold flex items-center justify-center shadow-lg shadow-amber-500/20 transition transform active:scale-95">
+                                <i id="playIcon" class="fa-solid fa-play ml-0.5 text-lg"></i>
+                            </button>
+                            <button id="nextBtn" title="วันถัดไป" class="w-9 h-9 rounded-full bg-rock-700 hover:bg-rock-600 text-white flex items-center justify-center transition border border-gray-600">
+                                <i class="fa-solid fa-forward-step"></i>
+                            </button>
+                            <button id="resetViewBtn" title="รีเซ็ตมุมมองแผนที่" class="w-9 h-9 rounded-full bg-rock-700 hover:bg-rock-600 text-gray-300 hover:text-white flex items-center justify-center transition border border-gray-600 ml-2">
+                                <i class="fa-solid fa-compress"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Slider Control -->
+                    <div class="relative flex items-center space-x-3">
+                        <span id="sliderMinLabel" class="text-[10px] text-gray-400 font-mono">1 ก.ค.</span>
+                        <input type="range" id="timelineSlider" min="0" max="78" value="0" step="1" 
+                            class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-amber-400 hover:accent-amber-300">
+                        <span id="sliderMaxLabel" class="text-[10px] text-gray-400 font-mono">31 ส.ค.</span>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Floating Legend -->
+            <div class="absolute top-4 left-4 z-20 hidden lg:block">
+                <div class="glass-panel p-3 rounded-xl border border-gray-700/60 text-xs space-y-2">
+                    <div class="font-bold text-gray-200 border-b border-gray-700 pb-1 mb-1">สัญลักษณ์แผนที่</div>
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-full bg-amber-400 inline-block shadow"></span>
+                        <span class="text-gray-300">จุดแสดงคอนเสิร์ต</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-full bg-red-500 inline-block shadow animate-ping"></span>
+                        <span class="text-gray-300">งานที่กำลังเลือกอยู่</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="w-6 h-0.5 bg-gradient-to-r from-amber-400 to-red-500 inline-block"></span>
+                        <span class="text-gray-300">เส้นทางการเดินทาง (Tour Flow)</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Sidebar Schedule List Panel -->
+        <div class="w-full md:w-96 bg-rock-800 border-t md:border-t-0 md:border-l border-gray-800 flex flex-col h-72 md:h-full z-20">
+            
+            <!-- Sidebar Header & Search -->
+            <div class="p-4 border-b border-gray-800 bg-rock-800/80 space-y-3 shrink-0">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-bold text-gray-200 uppercase tracking-wider flex items-center space-x-2">
+                        <i class="fa-solid fa-list-ul text-amber-400"></i>
+                        <span>ตารางแสดงคอนเสิร์ต</span>
+                    </h2>
+                    <span id="filteredCount" class="text-xs bg-rock-700 text-amber-400 px-2.5 py-0.5 rounded-full font-mono">
+                        79 รายการ
+                    </span>
+                </div>
+
+                <!-- Search Input -->
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-500 text-xs"></i>
+                    <input type="text" id="searchInput" placeholder="ค้นหาอำเภอ, จังหวัด, ร้าน, ชื่องาน..." 
+                        class="w-full bg-rock-900/80 text-xs text-gray-200 pl-8 pr-3 py-2 rounded-lg border border-gray-700 focus:outline-none focus:border-amber-400 transition">
+                </div>
+
+                <!-- Filter Pills -->
+                <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 text-[11px]">
+                    <button class="filter-pill active px-2.5 py-1 rounded-md bg-amber-500 text-black font-semibold shadow shrink-0" data-filter="all">ทั้งหมด</button>
+                    <button class="filter-pill px-2.5 py-1 rounded-md bg-rock-700 text-gray-300 hover:bg-rock-600 shrink-0" data-filter="multi">วันที่มีหลายงาน</button>
+                    <button class="filter-pill px-2.5 py-1 rounded-md bg-rock-700 text-gray-300 hover:bg-rock-600 shrink-0" data-filter="bkk">กทม.และปริมณฑล</button>
+                    <button class="filter-pill px-2.5 py-1 rounded-md bg-rock-700 text-gray-300 hover:bg-rock-600 shrink-0" data-filter="upcountry">ต่างจังหวัด</button>
+                </div>
+            </div>
+
+            <!-- Scrollable Event Cards List -->
+            <div id="eventsList" class="flex-1 overflow-y-auto p-3 space-y-2.5">
+                <!-- Dynamic List Rendered via JavaScript -->
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // Combined Tour Dataset for JULY and AUGUST 2026 with District Precision Coordinates
+        const tourData = [
+            // ==================== JULY 2026 ====================
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 1, dateStr: "1 ก.ค. 2026", showNo: 1,
+                title: "ร้านเรื่องมันยาว เพชรเกษม", venue: "ร้านเรื่องมันยาว เพชรเกษม",
+                district: "เขตบางแค", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 13.7088, lng: 100.3950, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 2, dateStr: "2 ก.ค. 2026", showNo: 1,
+                title: "โรงแรม เลอทาเน่า สมุทรปราการ", venue: "โรงแรม เลอทาเน่า สมุทรปราการ",
+                district: "อ.เมืองสมุทรปราการ", province: "สมุทรปราการ",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "ค่ำ",
+                lat: 13.5850, lng: 100.6150, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 2, dateStr: "2 ก.ค. 2026", showNo: 2,
+                title: "Asgard เหม่งจ๋าย", venue: "ร้าน Asgard เหม่งจ๋าย",
+                district: "เขตห้วยขวาง", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 13.7744, lng: 100.5841, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 3, dateStr: "3 ก.ค. 2026", showNo: 1,
+                title: "ลานหลังเซเว่นอีเลฟเว่น ระยอง", venue: "ลานหลังเซเว่นอีเลฟเว่น ระยอง",
+                district: "อ.เมืองระยอง", province: "ระยอง",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 12.6814, lng: 101.2816, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 4, dateStr: "4 ก.ค. 2026", showNo: 1,
+                title: "งานเต้นท์เขาใหญ่", venue: "งานเต้นท์เขาใหญ่ อ.ปากช่อง",
+                district: "อ.ปากช่อง", province: "นครราชสีมา",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "ค่ำ",
+                lat: 14.5450, lng: 101.3850, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 5, dateStr: "5 ก.ค. 2026", showNo: 1,
+                title: "ตะวันแดง นครสวรรค์", venue: "โรงเหล้าตะวันแดง นครสวรรค์",
+                district: "อ.เมืองนครสวรรค์", province: "นครสวรรค์",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 15.6989, lng: 100.1198, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 6, dateStr: "6 ก.ค. 2026", showNo: 1,
+                title: "ตะวันแดง พิษณุโลก", venue: "โรงเหล้าตะวันแดง พิษณุโลก",
+                district: "อ.เมืองพิษณุโลก", province: "พิษณุโลก",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 16.8211, lng: 100.2659, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 7, dateStr: "7 ก.ค. 2026", showNo: 1,
+                title: "Shooting (คิวถ่ายทำ)", venue: "คิวถ่ายทำรายการ/MV",
+                district: "เขตพระนคร", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO", "LOSO", "TG TIGER"], time: "กลางวัน",
+                lat: 13.7563, lng: 100.5018, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 7, dateStr: "7 ก.ค. 2026", showNo: 2,
+                title: "Virgin หนองแค", venue: "ร้าน Virgin หนองแค",
+                district: "อ.หนองแค", province: "สระบุรี",
+                lineup: ["LOSO", "LB"], time: "กลางคืน",
+                lat: 14.3411, lng: 100.8655, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 8, dateStr: "8 ก.ค. 2026", showNo: 1,
+                title: "งานเทศกาลผลไม้ อ.ขุนหาญ", venue: "ที่ว่าการ อ.ขุนหาญ จ.ศรีสะเกษ",
+                district: "อ.ขุนหาญ", province: "ศรีสะเกษ",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "ค่ำ",
+                lat: 14.6200, lng: 104.4250, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 9, dateStr: "9 ก.ค. 2026", showNo: 1,
+                title: "Let's chill ชัยพฤกษ์", venue: "ร้าน Let's chill ชัยพฤกษ์",
+                district: "อ.ปากเกร็ด", province: "นนทบุรี",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 13.9188, lng: 100.4533, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 10, dateStr: "10 ก.ค. 2026", showNo: 1,
+                title: "งานแข่งเรือบ้านหมี่ จ.ลพบุรี", venue: "งานแข่งเรือ อ.บ้านหมี่",
+                district: "อ.บ้านหมี่", province: "ลพบุรี",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "ค่ำ",
+                lat: 15.0442, lng: 100.5386, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 11, dateStr: "11 ก.ค. 2026", showNo: 1,
+                title: "เขาปีบเฟสติวัล 2 จ.ชุมพร", venue: "งานเขาปีบเฟสติวัล อ.ทุ่งตะโก",
+                district: "อ.ทุ่งตะโก", province: "ชุมพร",
+                lineup: ["SEK LOSO"], time: "ค่ำ",
+                lat: 10.1550, lng: 99.0880, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 12, dateStr: "12 ก.ค. 2026", showNo: 1,
+                title: "ตลาดนัมเบอร์วัน ราม2 บางนา", venue: "ตลาดนัมเบอร์วัน ราม2 บางนา",
+                district: "เขตประเวศ", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "ค่ำ",
+                lat: 13.6667, lng: 100.6833, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 13, dateStr: "13 ก.ค. 2026", showNo: 1,
+                title: "ตะวันแดง บุรีรัมย์", venue: "โรงเหล้าตะวันแดง บุรีรัมย์",
+                district: "อ.เมืองบุรีรัมย์", province: "บุรีรัมย์",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 14.9950, lng: 103.1000, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 14, dateStr: "14 ก.ค. 2026", showNo: 1,
+                title: "ตะวันแดง สุรินทร์", venue: "โรงเหล้าตะวันแดง สุรินทร์",
+                district: "อ.เมืองสุรินทร์", province: "สุรินทร์",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 14.8820, lng: 103.4930, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 15, dateStr: "15 ก.ค. 2026", showNo: 1,
+                title: "ตะวันแดง อุบลราชธานี", venue: "โรงเหล้าตะวันแดง อุบลราชธานี",
+                district: "อ.เมืองอุบลราชธานี", province: "อุบลราชธานี",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 15.2287, lng: 104.8594, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 16, dateStr: "16 ก.ค. 2026", showNo: 1,
+                title: "ตะวันแดง ขอนแก่น", venue: "โรงเหล้าตะวันแดง ขอนแก่น",
+                district: "อ.เมืองขอนแก่น", province: "ขอนแก่น",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 16.4322, lng: 102.8350, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 17, dateStr: "17 ก.ค. 2026", showNo: 1,
+                title: "สมหวังไก่ย่าง", venue: "ร้านสมหวังไก่ย่าง",
+                district: "อ.เมืองนนทบุรี", province: "นนทบุรี",
+                lineup: ["SEK LOSO", "TG TIGER"], time: "ช่วงค่ำ",
+                lat: 13.8400, lng: 100.5300, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 17, dateStr: "17 ก.ค. 2026", showNo: 2,
+                title: "Klub 25", venue: "ร้าน Klub 25 สุขุมวิท",
+                district: "เขตวัฒนา", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO", "TG TIGER"], time: "กลางคืน",
+                lat: 13.7388, lng: 100.5600, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 18, dateStr: "18 ก.ค. 2026", showNo: 1,
+                title: "งานเทศกาลของดี บ้านสมเด็จ", venue: "บ้านสมเด็จ อ.เคียนซา จ.สุราษฎร์ธานี",
+                district: "อ.เคียนซา", province: "สุราษฎร์ธานี",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "ค่ำ",
+                lat: 8.8411, lng: 99.1911, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 19, dateStr: "19 ก.ค. 2026", showNo: 1,
+                title: "ร้าน Zystem หาดใหญ่", venue: "ร้าน Zystem หาดใหญ่",
+                district: "อ.หาดใหญ่", province: "สงขลา",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 7.0089, lng: 100.4739, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 20, dateStr: "20 ก.ค. 2026", showNo: 1,
+                title: "ร้านเรา ศรีนครินทร์", venue: "ร้านเรา ศรีนครินทร์",
+                district: "เขตประเวศ", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 13.6933, lng: 100.6488, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 21, dateStr: "21 ก.ค. 2026", showNo: 1,
+                title: "แถลงข่าว 30 ปี LOSO นานเท่าไรก็รอ", venue: "Lido Connect สยามสแควร์",
+                district: "เขตปทุมวัน", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO", "LOSO", "TG TIGER", "LB"], time: "กลางวัน",
+                lat: 13.7456, lng: 100.5302, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 21, dateStr: "21 ก.ค. 2026", showNo: 2,
+                title: "งานแข่งเรือยาว วัดชินวราราม", venue: "วัดชินวราราม จ.ปทุมธานี",
+                district: "อ.เมืองปทุมธานี", province: "ปทุมธานี",
+                lineup: ["SEK LOSO", "LB"], time: "ค่ำ",
+                lat: 13.9928, lng: 100.5367, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 21, dateStr: "21 ก.ค. 2026", showNo: 3,
+                title: "ร้าน Tic Tac Toe ชั้น 5 Emsphere", venue: "Tic Tac Toe, The Emsphere",
+                district: "เขตคลองเตย", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "ดึก",
+                lat: 13.7300, lng: 100.5694, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 22, dateStr: "22 ก.ค. 2026", showNo: 1,
+                title: "ตะวันแดง เชียงใหม่", venue: "โรงเหล้าตะวันแดง เชียงใหม่",
+                district: "อ.เมืองเชียงใหม่", province: "เชียงใหม่",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 18.7900, lng: 98.9800, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 23, dateStr: "23 ก.ค. 2026", showNo: 1,
+                title: "ตะวันแดง เชียงราย", venue: "โรงเหล้าตะวันแดง เชียงราย",
+                district: "อ.เมืองเชียงราย", province: "เชียงราย",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 19.9075, lng: 99.8325, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 24, dateStr: "24 ก.ค. 2026", showNo: 1,
+                title: "ร้าน The Lansaka (พหลโยธิน 72)", venue: "ร้าน The Lansaka พหลโยธิน 72",
+                district: "อ.ลำลูกกา", province: "ปทุมธานี",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 13.9650, lng: 100.6188, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 25, dateStr: "25 ก.ค. 2026", showNo: 1,
+                title: "งาน Honda Ride Fun Festival", venue: "พัทยา ปาร์ค",
+                district: "อ.บางละมุง", province: "ชลบุรี",
+                lineup: ["LOSO", "TG TIGER"], time: "-",
+                lat: 12.9070, lng: 100.8628, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 25, dateStr: "25 ก.ค. 2026", showNo: 2,
+                title: "ร้านนั่งยาว จ.นครปฐม", venue: "ร้านนั่งยาว นครปฐม",
+                district: "อ.เมืองนครปฐม", province: "นครปฐม",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "-",
+                lat: 13.8211, lng: 100.0622, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 26, dateStr: "26 ก.ค. 2026", showNo: 1,
+                title: "Hype อุดรธานี", venue: "ร้าน Hype อุดรธานี",
+                district: "อ.เมืองอุดรธานี", province: "อุดรธานี",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 17.4055, lng: 102.7888, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 27, dateStr: "27 ก.ค. 2026", showNo: 1,
+                title: "Kickboxing KATPRO WORLD SERIE 2026", venue: "สนามมวยลุมพินี (รามอินทรา)",
+                district: "สนามมวยลุมพินี", province: "กรุงเทพมหานคร",
+                lineup: ["LOSO", "TG TIGER"], time: "ช่วงเย็น",
+                lat: 13.8670, lng: 100.6087, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 27, dateStr: "27 ก.ค. 2026", showNo: 2,
+                title: "งานเลี้ยงพนักงาน JIB ครบรอบ 25 ปี", venue: "ห้องแกรนด์บอลรูม เมืองทองธานี",
+                district: "อ.ปากเกร็ด", province: "นนทบุรี",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "ค่ำ",
+                lat: 13.9114, lng: 100.5488, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 27, dateStr: "27 ก.ค. 2026", showNo: 3,
+                title: "โฮม เอกมัย 12", venue: "ร้านโฮม เอกมัย 12",
+                district: "เขตวัฒนา", province: "กรุงเทพมหานคร",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "ดึก",
+                lat: 13.7333, lng: 100.5888, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 28, dateStr: "28 ก.ค. 2026", showNo: 1,
+                title: "ร้าน KOFF HOUSE จ.จันทบุรี", venue: "ร้าน KOFF HOUSE จันทบุรี",
+                district: "อ.เมืองจันทบุรี", province: "จันทบุรี",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 12.6088, lng: 102.1155, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 29, dateStr: "29 ก.ค. 2026", showNo: 1,
+                title: "งานแห่เทียนเข้าพรรษา วัดป่าเลไลยก์", venue: "วัดป่าเลไลยก์วรวิหาร จ.สุพรรณบุรี",
+                district: "อ.เมืองสุพรรณบุรี", province: "สุพรรณบุรี",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "ค่ำ",
+                lat: 14.4556, lng: 100.0988, isBkk: false
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 30, dateStr: "30 ก.ค. 2026", showNo: 1,
+                title: "สัมภาษณ์รายการ HP100 Podcast", venue: "สตูดิโอ HP100 Podcast กรุงเทพฯ",
+                district: "เขตพระนคร", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO"], time: "กลางวัน",
+                lat: 13.7563, lng: 100.5018, isBkk: true
+            },
+            {
+                monthNum: 7, monthName: "ก.ค.", dateNum: 31, dateStr: "31 ก.ค. 2026", showNo: 1,
+                title: "ร้านยักษ์ใหญ่แดนใต้ อ.หนองปรือ", venue: "ร้านยักษ์ใหญ่แดนใต้ อ.หนองปรือ",
+                district: "อ.บางละมุง", province: "ชลบุรี",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 12.9250, lng: 100.9250, isBkk: false
+            },
+
+            // ==================== AUGUST 2026 ====================
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 1, dateStr: "1 ส.ค. 2026", showNo: 1,
+                title: "Guest: CIMBweBOND Presents NUVORIGINAL", venue: "อิมแพ็ค อารีน่า เมืองทองธานี / Paragon Hall",
+                district: "อ.ปากเกร็ด", province: "นนทบุรี",
+                lineup: ["SEK LOSO"], time: "-",
+                lat: 13.9114, lng: 100.5488, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 1, dateStr: "1 ส.ค. 2026", showNo: 2,
+                title: "ร้านสกายสายแฮงค์ บางใหญ่", venue: "ร้านสกายสายแฮงค์ บางใหญ่ นนทบุรี",
+                district: "อ.บางใหญ่", province: "นนทบุรี",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 13.8762, lng: 100.4125, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 1, dateStr: "1 ส.ค. 2026", showNo: 3,
+                title: "Sabb Festival 2026 ศาลายา", venue: "Sabb Festival 2026 ศาลายา",
+                district: "อ.พุทธมณฑล", province: "นครปฐม",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 13.7938, lng: 100.3225, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 2, dateStr: "2 ส.ค. 2026", showNo: 1,
+                title: "Guest: CIMBweBOND Presents NUVORIGINAL", venue: "CIMBweBOND Presents NUVORIGINAL",
+                district: "อ.ปากเกร็ด", province: "นนทบุรี",
+                lineup: ["SEK LOSO"], time: "-",
+                lat: 13.9114, lng: 100.5488, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 2, dateStr: "2 ส.ค. 2026", showNo: 2,
+                title: "ร้านตำนานพระราม 3", venue: "ร้านตำนานพระราม 3",
+                district: "เขตยานนาวา", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO", "TG TIGER"], time: "กลางคืน",
+                lat: 13.6822, lng: 100.5348, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 3, dateStr: "3 ส.ค. 2026", showNo: 1,
+                title: "Life DD Market Roadshow", venue: "ม.ราชภัฏพระนคร เขตบางเขน",
+                district: "เขตบางเขน", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "ช่วงวัน",
+                lat: 13.8717, lng: 100.5901, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 4, dateStr: "4 ส.ค. 2026", showNo: 1,
+                title: "โรงเบียร์เยอรมันตะวันแดง เลียบด่วนรามอินทรา", venue: "โรงเบียร์เยอรมันตะวันแดง เลียบด่วนรามอินทรา",
+                district: "เขตลาดพร้าว", province: "กรุงเทพมหานคร",
+                lineup: ["LOSO", "TG TIGER"], time: "กลางคืน",
+                lat: 13.8055, lng: 100.6234, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 5, dateStr: "5 ส.ค. 2026", showNo: 1,
+                title: "ร้าน Prompt จรัญสนิทวงศ์", venue: "ร้าน Prompt จรัญสนิทวงศ์",
+                district: "เขตบางพลัด", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 13.7712, lng: 100.4852, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 6, dateStr: "6 ส.ค. 2026", showNo: 1,
+                title: "ร้าน Mountain View กระบี่", venue: "ร้าน Mountain View กระบี่",
+                district: "อ.เมืองกระบี่", province: "กระบี่",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 8.0863, lng: 98.9063, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 7, dateStr: "7 ส.ค. 2026", showNo: 1,
+                title: "Folk rock music camp ฉลุง หาดใหญ่", venue: "Folk rock music camp ต.ฉลุง อ.หาดใหญ่",
+                district: "อ.หาดใหญ่", province: "สงขลา",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 6.9532, lng: 100.4100, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 8, dateStr: "8 ส.ค. 2026", showNo: 1,
+                title: "งานวันแม่แห่งชาติ สนาม กม. 30", venue: "สนาม กม. 30 สมุทรปราการ",
+                district: "อ.เมืองสมุทรปราการ", province: "สมุทรปราการ",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "ค่ำ",
+                lat: 13.5681, lng: 100.6285, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 9, dateStr: "9 ส.ค. 2026", showNo: 1,
+                title: "Sensood food stations อ.วังจันทร์", venue: "Sensood food stations อ.วังจันทร์ จ.ระยอง",
+                district: "อ.วังจันทร์", province: "ระยอง",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "ค่ำ",
+                lat: 13.0333, lng: 101.5167, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 10, dateStr: "10 ส.ค. 2026", showNo: 1,
+                title: "งานสับปะรดศรีราชา", venue: "ลานสนามบินเครือสหพัฒน์ ศรีราชา",
+                district: "อ.ศรีราชา", province: "ชลบุรี",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "ค่ำ",
+                lat: 13.0945, lng: 100.9632, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 10, dateStr: "10 ส.ค. 2026", showNo: 2,
+                title: "งานอีเทคแฟร์ ชลบุรี", venue: "วิทยาลัยเทคโนโลยีภาคตะวันออก E-Tech",
+                district: "อ.เมืองชลบุรี", province: "ชลบุรี",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "14.00 น.",
+                lat: 13.4231, lng: 101.0022, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 11, dateStr: "11 ส.ค. 2026", showNo: 1,
+                title: "โรงเบียร์แปดริ้ว", venue: "โรงเบียร์แปดริ้ว",
+                district: "อ.เมืองฉะเชิงเทรา", province: "ฉะเชิงเทรา",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 13.6904, lng: 101.0779, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 12, dateStr: "12 ส.ค. 2026", showNo: 1,
+                title: "MCC Hall The Mall โคราช", venue: "MCC Hall เดอะมอลล์ โคราช",
+                district: "อ.เมืองนครราชสีมา", province: "นครราชสีมา",
+                lineup: ["SEK LOSO", "LOSO", "TG TIGER"], time: "ค่ำ",
+                lat: 14.9818, lng: 102.0831, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 13, dateStr: "13 ส.ค. 2026", showNo: 1,
+                title: "มดยิ้ม ลำปาง", venue: "ร้านมดยิ้ม ลำปาง",
+                district: "อ.เมืองลำปาง", province: "ลำปาง",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 18.2888, lng: 99.4923, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 14, dateStr: "14 ส.ค. 2026", showNo: 1,
+                title: "งานภายใน จ.กำแพงเพชร", venue: "งานภายใน จ.กำแพงเพชร",
+                district: "อ.เมืองกำแพงเพชร", province: "กำแพงเพชร",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "-",
+                lat: 16.4828, lng: 99.5227, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 15, dateStr: "15 ส.ค. 2026", showNo: 1,
+                title: "ลานเบียร์ The Night ราชบุรี", venue: "ลานเบียร์ The night ราชบุรี",
+                district: "อ.เมืองราชบุรี", province: "ราชบุรี",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "ค่ำ",
+                lat: 13.5372, lng: 99.8164, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 15, dateStr: "15 ส.ค. 2026", showNo: 2,
+                title: "แสงจันทร์ รามอินทรา", venue: "โรงเหล้าแสงจันทร์ รามอินทรา",
+                district: "เขตคันนายาว", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 13.8267, lng: 100.6722, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 16, dateStr: "16 ส.ค. 2026", showNo: 1,
+                title: "ป.กุ้งเผา หลักสี่", venue: "ป.กุ้งเผา หลักสี่",
+                district: "เขตหลักสี่", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "14.00 น.",
+                lat: 13.8872, lng: 100.5794, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 16, dateStr: "16 ส.ค. 2026", showNo: 2,
+                title: "ตลาดลานช้างมาร์เก็ต ศรีราชา", venue: "ตลาดลานช้างมาร์เก็ต ศรีราชา ชลบุรี",
+                district: "อ.ศรีราชา", province: "ชลบุรี",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 13.1678, lng: 100.9300, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 17, dateStr: "17 ส.ค. 2026", showNo: 1,
+                title: "ภูผาม่านสกายวิว ขอนแก่น", venue: "ภูผาม่านสกายวิว อ.ภูผาม่าน",
+                district: "อ.ภูผาม่าน", province: "ขอนแก่น",
+                lineup: ["LOSO", "LB"], time: "ช่วงเย็น/ค่ำ",
+                lat: 16.6433, lng: 101.9678, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 17, dateStr: "17 ส.ค. 2026", showNo: 2,
+                title: "ตลาดต้นตอ (ต้นตาล) ขอนแก่น", venue: "ตลาดต้นตาล ขอนแก่น",
+                district: "อ.เมืองขอนแก่น", province: "ขอนแก่น",
+                lineup: ["LOSO", "TG TIGER"], time: "กลางคืน",
+                lat: 16.4172, lng: 102.8228, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 18, dateStr: "18 ส.ค. 2026", showNo: 1,
+                title: "Palazzo Lounge รัชดา", venue: "Palazzo Lounge",
+                district: "เขตห้วยขวาง", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "ค่ำ",
+                lat: 13.7778, lng: 100.5738, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 18, dateStr: "18 ส.ค. 2026", showNo: 2,
+                title: "เล่นใหญ่ รัชโยธิน", venue: "ร้านเล่นใหญ่ รัชโยธิน",
+                district: "เขตจตุจักร", province: "กรุงเทพมหานคร",
+                lineup: ["LOSO", "TG TIGER"], time: "กลางคืน",
+                lat: 13.8285, lng: 100.5684, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 19, dateStr: "19 ส.ค. 2026", showNo: 1,
+                title: "ถ่ายรายการ คนละเป๊ก", venue: "ถ่ายรายการ คนละเป๊ก",
+                district: "เขตพญาไท", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO"], time: "กลางวัน",
+                lat: 13.7800, lng: 100.5400, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 19, dateStr: "19 ส.ค. 2026", showNo: 2,
+                title: "The Zeat ราชพฤกษ์", venue: "The Zeat ราชพฤกษ์",
+                district: "อ.เมืองนนทบุรี", province: "นนทบุรี",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 13.8222, lng: 100.4500, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 20, dateStr: "20 ส.ค. 2026", showNo: 1,
+                title: "Barrister ติวานนท์", venue: "ร้าน Barrister ติวานนท์",
+                district: "อ.เมืองนนทบุรี", province: "นนทบุรี",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 13.8822, lng: 100.5189, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 21, dateStr: "21 ส.ค. 2026", showNo: 1,
+                title: "The Great พานทอง ชลบุรี", venue: "The Great พานทอง ชลบุรี",
+                district: "อ.พานทอง", province: "ชลบุรี",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "ค่ำ",
+                lat: 13.4682, lng: 101.0988, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 21, dateStr: "21 ส.ค. 2026", showNo: 2,
+                title: "19 GENT PUB Pattaya", venue: "ร้าน 19 GENT PUB พัทยา",
+                district: "อ.บางละมุง (พัทยา)", province: "ชลบุรี",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "02.00 น.",
+                lat: 12.9276, lng: 100.8771, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 22, dateStr: "22 ส.ค. 2026", showNo: 1,
+                title: "ลานเบียร์วังน้ำเย็น สระแก้ว", venue: "ลานเบียร์วังน้ำเย็น จ.สระแก้ว",
+                district: "อ.วังน้ำเย็น", province: "สระแก้ว",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 13.5012, lng: 102.0782, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 23, dateStr: "23 ส.ค. 2026", showNo: 1,
+                title: "ป.กุ้งเผา ปิ่นเกล้า", venue: "ป.กุ้งเผา ปิ่นเกล้า",
+                district: "เขตบางกอกน้อย", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "ค่ำ",
+                lat: 13.7742, lng: 100.4789, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 23, dateStr: "23 ส.ค. 2026", showNo: 2,
+                title: "งานวันแม่แห่งชาติ โลตัสสุขาภิบาล 3", venue: "โลตัส สุขาภิบาล 3 มีนบุรี",
+                district: "เขตมีนบุรี", province: "กรุงเทพมหานคร",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 13.8139, lng: 100.7202, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 24, dateStr: "24 ส.ค. 2026", showNo: 1,
+                title: "งานกอล์ฟการกุศล บรอ 13", venue: "งานกอล์ฟการกุศล บรอ 13 ราชพฤกษ์",
+                district: "เขตตลิ่งชัน", province: "กรุงเทพมหานคร",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "ช่วงเย็น/ค่ำ",
+                lat: 13.7850, lng: 100.4450, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 25, dateStr: "25 ส.ค. 2026", showNo: 1,
+                title: "ร้านฝากจันทร์ จันทบุรี", venue: "ร้านฝากจันทร์ จันทบุรี",
+                district: "อ.เมืองจันทบุรี", province: "จันทบุรี",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 12.6111, lng: 102.1038, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 26, dateStr: "26 ส.ค. 2026", showNo: 1,
+                title: "Warm Up เชียงใหม่", venue: "Warm Up Cafe เชียงใหม่",
+                district: "อ.เมืองเชียงใหม่", province: "เชียงใหม่",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 18.7955, lng: 98.9658, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 27, dateStr: "27 ส.ค. 2026", showNo: 1,
+                title: "ร้านซาวด์เช็ค กาญจนบุรี", venue: "ร้านซาวด์เช็ค กาญจนบุรี",
+                district: "อ.เมืองกาญจนบุรี", province: "กาญจนบุรี",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 14.0228, lng: 99.5328, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 28, dateStr: "28 ส.ค. 2026", showNo: 1,
+                title: "The Zeal Camp ริมน้ำท่าผา", venue: "The Zeal Camp ริมน้ำท่าผา อ.บ้านโป่ง",
+                district: "อ.บ้านโป่ง", province: "ราชบุรี",
+                lineup: ["LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 13.8122, lng: 99.8788, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 29, dateStr: "29 ส.ค. 2026", showNo: 1,
+                title: "ตลาดเฮงฮวดเฮง ไทรน้อย", venue: "ตลาดเฮงฮวดเฮง ไทรน้อย นนทบุรี",
+                district: "อ.ไทรน้อย", province: "นนทบุรี",
+                lineup: ["LOSO", "TG TIGER"], time: "19.00 น.- 20.30 น.",
+                lat: 13.9789, lng: 100.3150, isBkk: true
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 29, dateStr: "29 ส.ค. 2026", showNo: 2,
+                title: "งานทิ้งทาน วัดไผ่โรงวัว", venue: "วัดไผ่โรงวัว อ.สองพี่น้อง จ.สุพรรณบุรี",
+                district: "อ.สองพี่น้อง", province: "สุพรรณบุรี",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "ดึก",
+                lat: 14.1611, lng: 100.1611, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 30, dateStr: "30 ส.ค. 2026", showNo: 1,
+                title: "งานสืบนาคเสถียร อ.ลานสัก", venue: "งานสืบนาคเสถียร อ.ลานสัก อุทัยธานี",
+                district: "อ.ลานสัก", province: "อุทัยธานี",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "ค่ำ",
+                lat: 15.4388, lng: 99.5812, isBkk: false
+            },
+            {
+                monthNum: 8, monthName: "ส.ค.", dateNum: 31, dateStr: "31 ส.ค. 2026", showNo: 1,
+                title: "แสงจันทร์ นครศรีธรรมราช", venue: "โรงเหล้าแสงจันทร์ นครศรีธรรมราช",
+                district: "อ.เมืองนครศรีธรรมราช", province: "นครศรีธรรมราช",
+                lineup: ["SEK LOSO", "TG TIGER", "LB"], time: "กลางคืน",
+                lat: 8.4322, lng: 99.9631, isBkk: false
+            }
+        ];
+
+        // Map State Variables
+        let map;
+        let markersGroup;
+        let routePolyline;
+
+        let currentIndex = 0;
+        let isPlaying = false;
+        let playInterval = null;
+        let activeMonthFilter = "all"; // "7", "8", or "all"
+        let activeCategoryFilter = "all"; // "all", "multi", "bkk", "upcountry"
+        let searchQuery = "";
+
+        // Filtered Active Subset
+        let filteredData = [...tourData];
+
+        // Initialize Leaflet Map
+        function initMap() {
+            map = L.map('map', {
+                zoomControl: false,
+                attributionControl: false
+            }).setView([13.736717, 100.523186], 6);
+
+            L.control.zoom({ position: 'topright' }).addTo(map);
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
+
+            markersGroup = L.layerGroup().addTo(map);
+
+            updateFilteredData();
+            selectShow(0, false);
+        }
+
+        // Apply filters & update working array
+        function updateFilteredData() {
+            // Group count map for date checking within month
+            const dateCountMap = {};
+            tourData.forEach(d => {
+                const key = `${d.monthNum}-${d.dateNum}`;
+                dateCountMap[key] = (dateCountMap[key] || 0) + 1;
+            });
+
+            filteredData = tourData.filter(item => {
+                // Month filter
+                const matchesMonth = (activeMonthFilter === "all") || (item.monthNum.toString() === activeMonthFilter);
+                
+                // Category filter
+                const key = `${item.monthNum}-${item.dateNum}`;
+                const matchesCategory = 
+                    (activeCategoryFilter === "all") ||
+                    (activeCategoryFilter === "multi" && dateCountMap[key] > 1) ||
+                    (activeCategoryFilter === "bkk" && item.isBkk) ||
+                    (activeCategoryFilter === "upcountry" && !item.isBkk);
+
+                // Search query
+                const matchesSearch = 
+                    item.title.toLowerCase().includes(searchQuery) ||
+                    item.venue.toLowerCase().includes(searchQuery) ||
+                    item.district.toLowerCase().includes(searchQuery) ||
+                    item.province.toLowerCase().includes(searchQuery) ||
+                    item.dateStr.toLowerCase().includes(searchQuery);
+
+                return matchesMonth && matchesCategory && matchesSearch;
+            });
+
+            // Update Timeline Slider Bounds
+            const slider = document.getElementById('timelineSlider');
+            slider.max = Math.max(0, filteredData.length - 1);
+            if (currentIndex >= filteredData.length) {
+                currentIndex = Math.max(0, filteredData.length - 1);
+            }
+            slider.value = currentIndex;
+
+            // Labels
+            if (filteredData.length > 0) {
+                document.getElementById('sliderMinLabel').innerText = `${filteredData[0].dateNum} ${filteredData[0].monthName}`;
+                document.getElementById('sliderMaxLabel').innerText = `${filteredData[filteredData.length - 1].dateNum} ${filteredData[filteredData.length - 1].monthName}`;
+            }
+
+            drawTourPath();
+            renderMarkersAndList();
+        }
+
+        // Draw Flow Polyline connecting consecutive shows
+        function drawTourPath() {
+            if (routePolyline) map.removeLayer(routePolyline);
+
+            if (filteredData.length === 0) return;
+
+            const pathCoords = filteredData.map(item => [item.lat, item.lng]);
+
+            routePolyline = L.polyline(pathCoords, {
+                color: '#f59e0b',
+                weight: 3,
+                opacity: 0.55,
+                dashArray: '6, 8',
+                lineJoin: 'round'
+            }).addTo(map);
+        }
+
+        // Custom Leaflet Marker Icon Creator
+        function createCustomIcon(showNumber, monthName, isActive) {
+            return L.divIcon({
+                className: `custom-div-icon ${isActive ? 'marker-active' : ''}`,
+                html: `
+                    <div class="marker-pin bg-gradient-to-br ${isActive ? 'from-red-500 to-amber-500' : 'from-amber-400 to-amber-600'}">
+                        <span class="marker-pin-inner">${showNumber}</span>
+                    </div>
+                    ${isActive ? '<div class="pulse-ring"></div>' : ''}
+                `,
+                iconSize: [30, 42],
+                iconAnchor: [15, 42]
+            });
+        }
+
+        // Render Map Markers & Sidebar Event Cards
+        function renderMarkersAndList() {
+            markersGroup.clearLayers();
+            const eventsListContainer = document.getElementById('eventsList');
+            eventsListContainer.innerHTML = '';
+
+            filteredData.forEach((item, index) => {
+                const isActive = (index === currentIndex);
+
+                // Add Leaflet Marker
+                const marker = L.marker([item.lat, item.lng], {
+                    icon: createCustomIcon(item.dateNum, item.monthName, isActive)
+                });
+
+                // Marker Popup
+                marker.bindPopup(`
+                    <div class="p-1 text-black font-sans">
+                        <div class="text-xs font-bold bg-amber-400 text-black px-2 py-0.5 rounded w-fit mb-1">
+                            ${item.dateStr} ${item.showNo > 1 ? '(งานที่ ' + item.showNo + ')' : ''}
+                        </div>
+                        <h3 class="font-extrabold text-sm text-gray-900">${item.title}</h3>
+                        <p class="text-xs text-gray-700 mt-1"><i class="fa-solid fa-location-dot text-red-500"></i> ${item.district} ${item.province}</p>
+                        <p class="text-[11px] text-gray-600 mt-0.5"><i class="fa-solid fa-clock"></i> เวลา: ${item.time}</p>
+                        <div class="mt-2 text-[10px] bg-gray-100 p-1 rounded font-semibold text-gray-800">
+                            ศิลปิน: ${item.lineup.join(', ')}
+                        </div>
+                    </div>
+                `, { closeButton: false });
+
+                marker.on('click', () => {
+                    selectShow(index, true);
+                });
+
+                markersGroup.addLayer(marker);
+
+                // Build Sidebar Card
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-xl border transition cursor-pointer flex flex-col justify-between space-y-2 ${
+                    isActive 
+                    ? 'bg-gradient-to-r from-rock-700 to-rock-800 border-amber-400/80 shadow-lg shadow-amber-500/10 ring-1 ring-amber-400/40' 
+                    : 'bg-rock-900/60 border-gray-800 hover:border-gray-700 hover:bg-rock-800/80'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-7 h-7 rounded-lg ${isActive ? 'bg-amber-400 text-black font-black' : 'bg-rock-700 text-amber-400'} text-xs font-bold flex items-center justify-center shrink-0">
+                                ${item.dateNum}
+                            </span>
+                            <div>
+                                <span class="text-xs font-bold ${isActive ? 'text-amber-400' : 'text-gray-300'}">
+                                    ${item.dateStr}
+                                </span>
+                                ${item.showNo > 1 ? `<span class="ml-1 text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.2 rounded border border-red-500/30">งานที่ ${item.showNo}</span>` : ''}
+                            </div>
+                        </div>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full ${item.isBkk ? 'bg-cyan-950 text-cyan-400 border border-cyan-800' : 'bg-purple-950 text-purple-300 border border-purple-800'}">
+                            ${item.province}
+                        </span>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-bold text-white line-clamp-1">${item.title}</h4>
+                        <p class="text-[11px] text-gray-400 line-clamp-1 mt-0.5">
+                            <i class="fa-solid fa-map-pin text-amber-400/80 mr-1"></i>${item.district} จ.${item.province}
+                        </p>
+                    </div>
+
+                    <div class="flex items-center justify-between text-[10px] text-gray-400 pt-1 border-t border-gray-800/60">
+                        <span><i class="fa-regular fa-clock mr-1"></i>${item.time}</span>
+                        <div class="flex items-center space-x-1 overflow-hidden">
+                            ${item.lineup.map(artist => `<span class="bg-rock-700 px-1.5 py-0.5 rounded text-[9px] text-gray-300 whitespace-nowrap">${artist}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    selectShow(index, true);
+                });
+
+                eventsListContainer.appendChild(card);
+            });
+
+            document.getElementById('filteredCount').innerText = `${filteredData.length} รายการ`;
+        }
+
+        // Select a specific show
+        function selectShow(index, panToMap = true) {
+            if (filteredData.length === 0) return;
+            if (index < 0) index = 0;
+            if (index >= filteredData.length) index = filteredData.length - 1;
+
+            currentIndex = index;
+            const currentShow = filteredData[currentIndex];
+
+            // Update UI elements
+            document.getElementById('timelineSlider').value = currentIndex;
+            document.getElementById('currentDateDisplay').innerText = currentShow.dateStr;
+            document.getElementById('currentVenueDisplay').innerText = `${currentShow.title} (${currentShow.district})`;
+
+            // Re-render markers & active state
+            renderMarkersAndList();
+
+            // Pan and Zoom map
+            if (panToMap && map && currentShow) {
+                map.flyTo([currentShow.lat, currentShow.lng], 10, {
+                    animate: true,
+                    duration: 1.1
+                });
+            }
+        }
+
+        // Play / Pause Tour Timeline Simulation
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            const playIcon = document.getElementById('playIcon');
+
+            if (isPlaying) {
+                playIcon.className = 'fa-solid fa-pause';
+                playInterval = setInterval(() => {
+                    if (currentIndex < filteredData.length - 1) {
+                        selectShow(currentIndex + 1, true);
+                    } else {
+                        // Loop back to start
+                        selectShow(0, true);
+                    }
+                }, 2200); // 2.2 seconds per stop
+            } else {
+                playIcon.className = 'fa-solid fa-play ml-0.5';
+                clearInterval(playInterval);
+            }
+        }
+
+        // Event Listeners Setup
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+
+            // Playback controls
+            document.getElementById('playPauseBtn').addEventListener('click', togglePlay);
+            
+            document.getElementById('prevBtn').addEventListener('click', () => {
+                if (isPlaying) togglePlay();
+                selectShow(currentIndex - 1, true);
+            });
+
+            document.getElementById('nextBtn').addEventListener('click', () => {
+                if (isPlaying) togglePlay();
+                selectShow(currentIndex + 1, true);
+            });
+
+            document.getElementById('resetViewBtn').addEventListener('click', () => {
+                map.flyTo([13.736717, 100.523186], 6);
+            });
+
+            // Slider input
+            document.getElementById('timelineSlider').addEventListener('input', (e) => {
+                if (isPlaying) togglePlay();
+                const targetIdx = parseInt(e.target.value);
+                selectShow(targetIdx, true);
+            });
+
+            // Search Filter input
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase().trim();
+                updateFilteredData();
+                selectShow(0, true);
+            });
+
+            // Month Switcher Tabs
+            const monthTabs = document.querySelectorAll('.month-tab');
+            monthTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    monthTabs.forEach(t => {
+                        t.classList.remove('active', 'bg-amber-500', 'text-black', 'font-bold', 'shadow');
+                        t.classList.add('text-gray-300');
+                    });
+                    tab.classList.add('active', 'bg-amber-500', 'text-black', 'font-bold', 'shadow');
+                    tab.classList.remove('text-gray-300');
+
+                    activeMonthFilter = tab.getAttribute('data-month');
+                    updateFilteredData();
+                    selectShow(0, true);
+                });
+            });
+
+            // Category Filter Pills
+            const filterPills = document.querySelectorAll('.filter-pill');
+            filterPills.forEach(pill => {
+                pill.addEventListener('click', () => {
+                    filterPills.forEach(p => {
+                        p.classList.remove('active', 'bg-amber-500', 'text-black', 'font-semibold', 'shadow');
+                        p.classList.add('bg-rock-700', 'text-gray-300');
+                    });
+                    pill.classList.add('active', 'bg-amber-500', 'text-black', 'font-semibold', 'shadow');
+                    pill.classList.remove('bg-rock-700', 'text-gray-300');
+
+                    activeCategoryFilter = pill.getAttribute('data-filter');
+                    updateFilteredData();
+                    selectShow(0, true);
+                });
+            });
+
+            // Stats Modal
+            const statsModal = document.getElementById('statsModal');
+            document.getElementById('toggleStatsBtn').addEventListener('click', () => {
+                statsModal.classList.remove('hidden');
+            });
+            document.getElementById('closeStatsBtn').addEventListener('click', () => {
+                statsModal.classList.add('hidden');
+            });
+            statsModal.addEventListener('click', (e) => {
+                if (e.target === statsModal) statsModal.classList.add('hidden');
+            });
+        });
+    </script>
+</body>
+</html>
